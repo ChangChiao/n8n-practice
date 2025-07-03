@@ -1,0 +1,174 @@
+{
+  "name": "Daily Backend Data Scraping",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 24
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Daily Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeFunction",
+        "functionCode": "// Ecommerce 資料抓取\nconst puppeteer = require('puppeteer-extra');\nconst StealthPlugin = require('puppeteer-extra-plugin-stealth');\npuppeteer.use(StealthPlugin());\n\nconst browser = await puppeteer.launch({ \n  headless: false,\n  args: ['--no-sandbox', '--disable-setuid-sandbox']\n});\n\nconst page = await browser.newPage();\n\ntry {\n  // 前往 Ecommerce 登入頁面\n  await page.goto('https://ecommerce.example.com/admin/login', { waitUntil: 'networkidle2' });\n  \n  // 登入\n  await page.type('#account', 'admin');\n  await page.type('#password', '1234');\n  await page.click('.login-btn');\n  await page.waitForNavigation();\n  \n  // 導航到數據頁面\n  await page.click('a[href=\"/analytics\"]');\n  await page.waitForSelector('.analytics-data');\n  \n  // 抓取數據\n  const data = await page.evaluate(() => {\n    const metrics = {};\n    \n    // 抓取各種指標\n    metrics.totalSales = document.querySelector('.total-sales')?.textContent?.trim();\n    metrics.orderCount = document.querySelector('.order-count')?.textContent?.trim();\n    metrics.avgOrderValue = document.querySelector('.avg-order-value')?.textContent?.trim();\n    metrics.conversionRate = document.querySelector('.conversion-rate')?.textContent?.trim();\n    \n    return metrics;\n  });\n  \n  await browser.close();\n  return { ecommerceData: data };\n  \n} catch (error) {\n  await browser.close();\n  throw error;\n}"
+      },
+      "id": "ecommerce-scraper",
+      "name": "Ecommerce Scraper",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [450, 400]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "appendOrUpdate",
+        "documentId": "YOUR_GOOGLE_SHEET_ID",
+        "sheetName": "Sheet1",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Date": "={{new Date().toISOString().split('T')[0]}}",
+            "SmartQuery_Metric1": "={{$node[\"Smart Query Scraper\"].json.smartQueryData[0].metric1}}",
+            "SmartQuery_Metric2": "={{$node[\"Smart Query Scraper\"].json.smartQueryData[0].metric2}}",
+            "SmartQuery_Metric3": "={{$node[\"Smart Query Scraper\"].json.smartQueryData[0].metric3}}",
+            "Ecommerce_TotalSales": "={{$node[\"Ecommerce Scraper\"].json.ecommerceData.totalSales}}",
+            "Ecommerce_OrderCount": "={{$node[\"Ecommerce Scraper\"].json.ecommerceData.orderCount}}",
+            "Ecommerce_AvgOrderValue": "={{$node[\"Ecommerce Scraper\"].json.ecommerceData.avgOrderValue}}",
+            "Ecommerce_ConversionRate": "={{$node[\"Ecommerce Scraper\"].json.ecommerceData.conversionRate}}"
+          }
+        },
+        "options": {
+          "cellFormat": "USER_ENTERED"
+        }
+      },
+      "id": "google-sheets",
+      "name": "Update Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [650, 300],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "1",
+          "name": "Google Sheets Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "chatCompletion",
+        "model": "gpt-4",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "你是一位數據分析專家，請分析以下電商後台數據的變化趨勢，並提供洞察和建議。"
+            },
+            {
+              "role": "user",
+              "content": "請分析今天的數據：\n\nSmart Query 數據：\n- Metric 1: {{$node[\"Smart Query Scraper\"].json.smartQueryData[0].metric1}}\n- Metric 2: {{$node[\"Smart Query Scraper\"].json.smartQueryData[0].metric2}}\n- Metric 3: {{$node[\"Smart Query Scraper\"].json.smartQueryData[0].metric3}}\n\nEcommerce 數據：\n- 總銷售額: {{$node[\"Ecommerce Scraper\"].json.ecommerceData.totalSales}}\n- 訂單數: {{$node[\"Ecommerce Scraper\"].json.ecommerceData.orderCount}}\n- 平均訂單價值: {{$node[\"Ecommerce Scraper\"].json.ecommerceData.avgOrderValue}}\n- 轉換率: {{$node[\"Ecommerce Scraper\"].json.ecommerceData.conversionRate}}\n\n請提供：\n1. 數據趨勢分析\n2. 關鍵發現\n3. 行動建議"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 1000
+        }
+      },
+      "id": "chatgpt-analysis",
+      "name": "ChatGPT Analysis",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1,
+      "position": [850, 300],
+      "credentials": {
+        "openAiApi": {
+          "id": "2",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "append",
+        "documentId": "YOUR_GOOGLE_SHEET_ID",
+        "sheetName": "Analysis",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Date": "={{new Date().toISOString()}}",
+            "Analysis": "={{$node[\"ChatGPT Analysis\"].json.choices[0].message.content}}"
+          }
+        }
+      },
+      "id": "save-analysis",
+      "name": "Save Analysis to Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [1050, 300],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "1",
+          "name": "Google Sheets Account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Daily Trigger": {
+      "main": [
+        [
+          {
+            "node": "Ecommerce Scraper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+
+    "Ecommerce Scraper": {
+      "main": [
+        [
+          {
+            "node": "Update Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "ChatGPT Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ChatGPT Analysis": {
+      "main": [
+        [
+          {
+            "node": "Save Analysis to Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
