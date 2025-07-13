@@ -21,7 +21,7 @@
     {
       "parameters": {
         "operation": "executeFunction",
-        "functionCode": "// Ecommerce 資料抓取\nconst puppeteer = require('puppeteer-extra');\nconst StealthPlugin = require('puppeteer-extra-plugin-stealth');\npuppeteer.use(StealthPlugin());\n\nconst browser = await puppeteer.launch({ \n  headless: false,\n  args: ['--no-sandbox', '--disable-setuid-sandbox']\n});\n\nconst page = await browser.newPage();\n\ntry {\n  // 前往 Ecommerce 登入頁面\n  await page.goto('https://ecommerce.example.com/admin/login', { waitUntil: 'networkidle2' });\n  \n  // 登入\n  await page.type('#account', 'admin');\n  await page.type('#password', '1234');\n  await page.click('.login-btn');\n  await page.waitForNavigation();\n  \n  // 導航到數據頁面\n  await page.click('a[href=\"/analytics\"]');\n  await page.waitForSelector('.analytics-data');\n  \n  // 抓取數據\n  const data = await page.evaluate(() => {\n    const metrics = {};\n    \n    // 抓取各種指標\n    metrics.totalSales = document.querySelector('.total-sales')?.textContent?.trim();\n    metrics.orderCount = document.querySelector('.order-count')?.textContent?.trim();\n    metrics.avgOrderValue = document.querySelector('.avg-order-value')?.textContent?.trim();\n    metrics.conversionRate = document.querySelector('.conversion-rate')?.textContent?.trim();\n    \n    return metrics;\n  });\n  \n  await browser.close();\n  return { ecommerceData: data };\n  \n} catch (error) {\n  await browser.close();\n  throw error;\n}"
+        "functionCode": "// Ecommerce 資料抓取\nconst puppeteer = require('puppeteer-extra');\nconst StealthPlugin = require('puppeteer-extra-plugin-stealth');\npuppeteer.use(StealthPlugin());\n\nconst browser = await puppeteer.launch({ \n  headless: false,\n  args: ['--no-sandbox', '--disable-setuid-sandbox']\n});\n\nconst page = await browser.newPage();\n\ntry {\n  // 前往 Ecommerce 登入頁面\n  await page.goto($env.ECOMMERCE_LOGIN_URL || 'https://ecommerce.example.com/admin/login', { waitUntil: 'networkidle2' });\n  \n  // 登入\n  await page.type('#account', $env.ECOMMERCE_USERNAME || 'admin');\n  await page.type('#password', $env.ECOMMERCE_PASSWORD || '1234');\n  await page.click('.login-btn');\n  await page.waitForNavigation();\n  \n  // 導航到數據頁面\n  await page.click('a[href=\"/analytics\"]');\n  await page.waitForSelector('.analytics-data');\n  \n  // 抓取數據\n  const data = await page.evaluate(() => {\n    const metrics = {};\n    \n    // 抓取各種指標\n    metrics.totalSales = document.querySelector('.total-sales')?.textContent?.trim();\n    metrics.orderCount = document.querySelector('.order-count')?.textContent?.trim();\n    metrics.avgOrderValue = document.querySelector('.avg-order-value')?.textContent?.trim();\n    metrics.conversionRate = document.querySelector('.conversion-rate')?.textContent?.trim();\n    \n    return metrics;\n  });\n  \n  await browser.close();\n  return { ecommerceData: data };\n  \n} catch (error) {\n  await browser.close();\n  throw error;\n}"
       },
       "id": "ecommerce-scraper",
       "name": "Ecommerce Scraper",
@@ -33,7 +33,7 @@
       "parameters": {
         "authentication": "oAuth2",
         "operation": "appendOrUpdate",
-        "documentId": "YOUR_GOOGLE_SHEET_ID",
+        "documentId": "={{$env.GOOGLE_SHEET_ID}}",
         "sheetName": "Sheet1",
         "columns": {
           "mappingMode": "defineBelow",
@@ -67,7 +67,7 @@
     {
       "parameters": {
         "resource": "chatCompletion",
-        "model": "gpt-4",
+        "model": "={{$env.OPENAI_MODEL || 'gpt-4'}}",
         "messages": {
           "values": [
             {
@@ -101,7 +101,7 @@
       "parameters": {
         "authentication": "oAuth2",
         "operation": "append",
-        "documentId": "YOUR_GOOGLE_SHEET_ID",
+        "documentId": "={{$env.GOOGLE_SHEET_ID}}",
         "sheetName": "Analysis",
         "columns": {
           "mappingMode": "defineBelow",

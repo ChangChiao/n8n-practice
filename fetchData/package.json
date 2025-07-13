@@ -1,0 +1,14 @@
+{
+  "name": "n8n-puppeteer-scraper",
+  "version": "1.0.0",
+  "description": "External puppeteer script for n8n",
+  "main": "alternative-puppeteer-function.js",
+  "scripts": {
+    "start": "node alternative-puppeteer-function.js",
+    "install-deps": "npm install"
+  },
+  "dependencies": {
+    "playwright": "^1.40.0",
+    "dotenv": "^16.3.1"
+  }
+}
