@@ -22,7 +22,7 @@
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "webhook-test/9de2f03a-a0a2-4f2d-9945-afc01f1f6c4f",
+        "path": "webhook-test/38872084-125c-4a5f-ab75-358d9941928e",
         "responseMode": "responseNode",
         "options": {}
       },
@@ -31,7 +31,7 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [250, 500],
-      "webhookId": "9de2f03a-a0a2-4f2d-9945-afc01f1f6c4f"
+      "webhookId": "38872084-125c-4a5f-ab75-358d9941928e"
     },
     {
       "parameters": {

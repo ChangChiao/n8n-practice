@@ -1,7 +1,7 @@
 // 如果 n8n-nodes-puppeteer 無法使用，可以使用 HTTP Request 節點配合此函數
 
 const { chromium } = require("playwright");
-require('dotenv').config();
+require("dotenv").config();
 
 async function scrapeEcommerce() {
   const browser = await chromium.launch({
@@ -16,7 +16,10 @@ async function scrapeEcommerce() {
 
   try {
     // 前往登入頁面
-    await page.goto(process.env.ECOMMERCE_TEST_LOGIN_URL || "https://e-commerce-test-site-iota.vercel.app/login");
+    await page.goto(
+      process.env.ECOMMERCE_TEST_LOGIN_URL ||
+        "https://e-commerce-test-site-iota.vercel.app/login"
+    );
 
     // 填寫登入資訊
     await page.fill("#username", process.env.ECOMMERCE_USERNAME || "admin");
@@ -96,25 +99,26 @@ async function main() {
 
 // 發送資料到 webhook 的函數
 async function postToWebhook(data) {
-  const webhookUrl = 'http://localhost:5678/webhook-test/9de2f03a-a0a2-4f2d-9945-afc01f1f6c4f';
-  
+  const webhookUrl =
+    "http://localhost:5678/webhook-test/38872084-125c-4a5f-ab75-358d9941928e";
+
   try {
     const response = await fetch(webhookUrl, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify(data)
+      body: JSON.stringify(data),
     });
-    
+
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
-    
+
     const responseData = await response.text();
     return {
       statusCode: response.status,
-      data: responseData
+      data: responseData,
     };
   } catch (error) {
     throw error;
@@ -123,11 +127,11 @@ async function postToWebhook(data) {
 
 // 執行
 main()
-  .then(results => {
-    console.log('執行結果:', JSON.stringify(results, null, 2));
+  .then((results) => {
+    console.log("執行結果:", JSON.stringify(results, null, 2));
     process.exit(0);
   })
-  .catch(error => {
-    console.error('執行失敗:', error);
+  .catch((error) => {
+    console.error("執行失敗:", error);
     process.exit(1);
   });
