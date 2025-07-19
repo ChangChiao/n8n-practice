@@ -25,6 +25,10 @@ async function scrapeEcommerce() {
     await page.fill("#username", process.env.ECOMMERCE_USERNAME || "admin");
     await page.fill("#password", process.env.ECOMMERCE_PASSWORD || "1234");
 
+    // 等待使用者手動輸入驗證碼
+    console.log("請在30秒內手動輸入驗證碼...");
+    await page.waitForTimeout(30000); // 等待30秒
+
     // 點擊登入
     await page.click('button[type="submit"]');
 
