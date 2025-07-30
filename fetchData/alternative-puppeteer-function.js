@@ -18,16 +18,19 @@ async function scrapeEcommerce() {
     // 前往登入頁面
     await page.goto(
       process.env.ECOMMERCE_TEST_LOGIN_URL ||
-        "https://e-commerce-test-site-iota.vercel.app/login"
+        "https://e-commerce-test-site-iota.vercel.app"
     );
 
     // 填寫登入資訊
     await page.fill("#username", process.env.ECOMMERCE_USERNAME || "admin");
     await page.fill("#password", process.env.ECOMMERCE_PASSWORD || "1234");
 
+    // 點擊登入
+    await page.click('button[type="submit"]');
+
     // 等待使用者手動輸入驗證碼
     console.log("請在30秒內手動輸入驗證碼...");
-    await page.waitForTimeout(30000); // 等待30秒
+    await page.waitForTimeout(10000); // 等待10秒
 
     // 點擊登入
     await page.click('button[type="submit"]');
@@ -36,12 +39,12 @@ async function scrapeEcommerce() {
     await page.waitForLoadState("networkidle");
 
     // 導航到報表頁面
-    await page.click("text=報表");
-    await page.waitForSelector("table.data-table");
+    await page.click("text=訂單查詢");
+    await page.waitForSelector("table.order-header");
 
     // 擷取數據
     const data = await page.evaluate(() => {
-      const table = document.querySelector("table.data-table");
+      const table = document.querySelector("table.order-header");
       const rows = table.querySelectorAll("tbody tr");
       const results = [];
 
@@ -49,10 +52,13 @@ async function scrapeEcommerce() {
         const cells = row.querySelectorAll("td");
         if (cells.length > 0) {
           results.push({
-            date: cells[0]?.textContent?.trim(),
-            metric1: cells[1]?.textContent?.trim(),
-            metric2: cells[2]?.textContent?.trim(),
-            metric3: cells[3]?.textContent?.trim(),
+            orderId: cells[0]?.textContent?.trim(),
+            name: cells[1]?.textContent?.trim(),
+            address: cells[2]?.textContent?.trim(),
+            phone: cells[3]?.textContent?.trim(),
+            item: cells[4]?.textContent?.trim(),
+            time: cells[5]?.textContent?.trim(),
+            amount: cells[6]?.textContent?.trim(),
           });
         }
       });
@@ -72,16 +78,8 @@ async function scrapeEcommerce() {
 async function main() {
   const results = {
     ecommerce: null,
-    // smartQuery: null,
     timestamp: new Date().toISOString(),
   };
-
-  // try {
-  //   results.smartQuery = await scrapeSmartQuery();
-  // } catch (error) {
-  //   console.error("Smart Query 錯誤:", error);
-  //   results.smartQuery = { error: error.message };
-  // }
 
   try {
     results.ecommerce = await scrapeEcommerce();
