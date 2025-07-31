@@ -1,10 +1,10 @@
 {
-  "name": "n8n-puppeteer-scraper",
+  "name": "n8n-web-scraper",
   "version": "1.0.0",
-  "description": "External puppeteer script for n8n",
-  "main": "alternative-puppeteer-function.js",
+  "description": "External playwright script for n8n",
+  "main": "fetch-web-function.js",
   "scripts": {
-    "start": "node alternative-puppeteer-function.js",
+    "start": "node fetch-web-function.js",
     "install-deps": "npm install"
   },
   "dependencies": {

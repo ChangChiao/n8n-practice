@@ -4,9 +4,16 @@ const { chromium } = require("playwright");
 require("dotenv").config();
 
 async function scrapeEcommerce() {
-  const browser = await chromium.launch({
-    headless: false, // 設為 true 以在背景執行
-  });
+  const launchOptions = {
+    headless: true, // Docker 環境中必須使用 headless
+  };
+  
+  // 如果設定了系統 Chromium 路徑，使用它
+  if (process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH) {
+    launchOptions.executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
+  }
+  
+  const browser = await chromium.launch(launchOptions);
 
   const context = await browser.newContext({
     userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
@@ -29,8 +36,9 @@ async function scrapeEcommerce() {
     await page.click('button[type="submit"]');
 
     // 等待使用者手動輸入驗證碼
-    console.log("請在30秒內手動輸入驗證碼...");
-    await page.waitForTimeout(10000); // 等待10秒
+    await page.fill("#verificationCode", "0000");
+    // console.log("請在30秒內手動輸入驗證碼...");
+    // await page.waitForTimeout(10000); // 等待10秒
 
     // 點擊登入
     await page.click('button[type="submit"]');
