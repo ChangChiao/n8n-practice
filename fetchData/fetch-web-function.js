@@ -110,6 +110,7 @@ async function main() {
 // 發送資料到 webhook 的函數
 async function postToWebhook(data) {
   const webhookUrl =
+    process.env.WEBHOOK_URL ||
     "http://localhost:5678/webhook-test/38872084-125c-4a5f-ab75-358d9941928e";
 
   try {

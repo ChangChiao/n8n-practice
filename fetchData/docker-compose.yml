@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  web-scraper:
+    build: .
+    container_name: n8n-web-scraper
+    environment:
+      - NODE_ENV=production
+      # Playwright 1.54.1 的 Chromium 路徑
+      - PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/ms-playwright/chromium-1148/chrome-linux/chrome
+      # 從 .env 檔案讀取環境變數
+      - ECOMMERCE_TEST_LOGIN_URL=${ECOMMERCE_TEST_LOGIN_URL}
+      - ECOMMERCE_USERNAME=${ECOMMERCE_USERNAME}
+      - ECOMMERCE_PASSWORD=${ECOMMERCE_PASSWORD}
+    env_file:
+      - .env
+    volumes:
+      # 如果需要儲存擷取的資料或截圖
+      - ./data:/app/data
+    networks:
+      - n8n-network
+    # 如果需要連接到本機的 n8n
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # 用於測試的服務
+  test-script:
+    build: .
+    container_name: n8n-test-script
+    command: ["node", "test-simple.js"]
+    networks:
+      - n8n-network
+
+networks:
+  n8n-network:
+    driver: bridge

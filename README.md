@@ -22,3 +22,9 @@ docker exec -i n8n-n8n-1 sh -c \
 ```
 docker cp n8n-n8n-1:/tmp/workflows ./workflow/
 ```
+
+# execute playwright script
+
+```
+node /home/node/fetchData/fetch-web-function.js
+```

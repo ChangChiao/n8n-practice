@@ -1,70 +1,111 @@
-# n8n Puppeteer 資料抓取工具
+# Docker 使用指南
 
-這個專案提供了一個使用 Playwright 的資料抓取腳本，可以整合到 n8n 工作流程中。
+這份文件說明如何使用 Docker 來執行 n8n web scraper，讓你不需要在本機安裝任何相依套件。
 
-## 檔案結構
+## 前置準備
 
-```
-fetchData/
-├── alternative-puppeteer-function.js  # 主要的抓取腳本
-├── package.json                       # Node.js 專案設定
-├── setup.sh                          # 安裝腳本
-├── .env.example                      # 環境變數範例
-├── .env                             # 環境變數設定（不在版控中）
-├── workflows/
-│   ├── data-scraping-workflow.json  # n8n 內建 puppeteer 節點工作流程
-│   └── execute-puppeteer-script.json # 執行外部腳本的工作流程
-└── README.md                        # 本檔案
-```
+1. 安裝 Docker 和 Docker Compose
+2. 複製 `.env.example` 為 `.env` 並設定環境變數：
+   ```bash
+   cp .env.example .env
+   ```
 
-## 快速開始
+## 環境變數設定
 
-### 1. 安裝依賴
+編輯 `.env` 檔案，設定以下變數：
 
-```bash
-cd fetchData
-./setup.sh
-```
+- `ECOMMERCE_TEST_LOGIN_URL`: 電商平台登入網址
+- `ECOMMERCE_USERNAME`: 登入帳號
+- `ECOMMERCE_PASSWORD`: 登入密碼
+- `WEBHOOK_URL`: n8n webhook URL（在 Docker 中請使用 `http://host.docker.internal:5678/...`）
 
-### 2. 設定環境變數
+## 使用方式
 
-複製 `.env.example` 到 `.env` 並填入必要資訊：
+### 1. 建置 Docker 映像檔
 
 ```bash
-cp .env.example .env
+make build
+# 或
+docker-compose build
 ```
 
-編輯 `.env` 檔案：
-```
-ECOMMERCE_TEST_LOGIN_URL=https://e-commerce-test-site-iota.vercel.app/login
-ECOMMERCE_USERNAME=admin
-ECOMMERCE_PASSWORD=1234
-```
-
-### 3. 測試腳本
+### 2. 執行 web scraper
 
 ```bash
-node alternative-puppeteer-function.js
+make run
+# 或
+docker-compose run --rm web-scraper
 ```
 
-### 4. 整合到 n8n
+### 3. 執行測試腳本
 
-1. 開啟 n8n (http://localhost:5678)
-2. 匯入 `workflows/execute-puppeteer-script.json`
-3. 執行工作流程
+```bash
+make test
+# 或
+docker-compose run --rm test-script
+```
 
-## 工作流程說明
+### 4. 在背景執行
 
-### execute-puppeteer-script.json
-- 使用 Execute Command 節點執行外部腳本
-- 包含 Webhook 接收腳本回傳的數據
-- 適合需要使用本地安裝的 Playwright
+```bash
+make up
+# 或
+docker-compose up -d
+```
 
-### data-scraping-workflow.json
-- 使用 n8n 內建的 Function 節點
-- 需要安裝 n8n-nodes-puppeteer
-- 適合在 n8n 環境內直接執行
+### 5. 查看日誌
 
-## 故障排除
+```bash
+make logs
+# 或
+docker-compose logs -f
+```
 
-如果遇到問題，請參考 `n8n-integration-guide.md` 中的詳細說明。
+### 6. 進入容器 shell（除錯用）
+
+```bash
+make shell
+# 或
+docker-compose run --rm web-scraper /bin/bash
+```
+
+### 7. 停止所有服務
+
+```bash
+make down
+# 或
+docker-compose down
+```
+
+### 8. 清理資源
+
+```bash
+make clean
+```
+
+## 注意事項
+
+1. **Webhook URL**: 如果 n8n 運行在本機，在 Docker 容器中需要使用 `host.docker.internal` 而不是 `localhost`。
+
+2. **Playwright**: 使用官方的 Playwright Docker 映像檔，已包含所有必要的瀏覽器相依套件。
+
+3. **資料儲存**: 如果需要儲存擷取的資料或截圖，會儲存在 `./data` 目錄中。
+
+4. **網路**: 所有服務都在 `n8n-network` 網路中運行，方便服務間通訊。
+
+## 疑難排解
+
+### 無法連接到 webhook
+
+確認 `.env` 中的 `WEBHOOK_URL` 設定正確：
+
+- 本機 n8n: `http://host.docker.internal:5678/webhook-test/...`
+- 遠端 n8n: 使用實際的網址
+
+### 瀏覽器無法啟動
+
+確認 Docker 有足夠的記憶體（建議至少 2GB）。
+
+### 權限問題
+
+容器內使用非 root 使用者執行，如果遇到權限問題，請確認 `./data` 目錄有正確的權限。
