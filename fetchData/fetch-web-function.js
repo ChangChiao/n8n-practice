@@ -98,7 +98,9 @@ async function main() {
 
   // 發送資料到 webhook
   try {
-    await postToWebhook(results);
+    console.log("準備發送資料到 webhook:", JSON.stringify(results, null, 2));
+    const webhookResponse = await postToWebhook(results);
+    console.log("Webhook 回應:", webhookResponse);
     console.log("資料已成功發送到 webhook");
   } catch (error) {
     console.error("發送到 webhook 失敗:", error);
