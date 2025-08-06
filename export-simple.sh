@@ -9,8 +9,9 @@ echo "Step 1: Exporting workflows in container..."
 docker exec -i n8n-n8n-1 sh -c \
   "n8n export:workflow --all --separate --output=/tmp/workflows"
 
-# ② Copy workflows directory to host
-echo "Step 2: Copying workflows to host..."
+# ② Clean workflow directory and copy workflows to host
+echo "Step 2: Cleaning workflow directory and copying workflows to host..."
+rm -rf ./workflow/*
 docker cp n8n-n8n-1:/tmp/workflows ./workflow/
 
 # ③ Rename workflow files based on their name property
