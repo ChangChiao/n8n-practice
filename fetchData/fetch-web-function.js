@@ -1,17 +1,12 @@
-// 如果 n8n-nodes-puppeteer 無法使用，可以使用 HTTP Request 節點配合此函數
+// 本地執行腳本，用於抓取電商資料
 
 const { chromium } = require("playwright");
 require("dotenv").config();
 
 async function scrapeEcommerce() {
   const launchOptions = {
-    headless: true, // Docker 環境中必須使用 headless
+    headless: false, // 本地執行可以使用非 headless 模式
   };
-  
-  // 如果設定了系統 Chromium 路徑，使用它
-  if (process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH) {
-    launchOptions.executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
-  }
   
   const browser = await chromium.launch(launchOptions);
 
