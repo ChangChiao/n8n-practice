@@ -7,7 +7,7 @@ async function scrapeEcommerce() {
   const launchOptions = {
     headless: false, // 本地執行可以使用非 headless 模式
   };
-  
+
   const browser = await chromium.launch(launchOptions);
 
   const context = await browser.newContext({
@@ -43,11 +43,15 @@ async function scrapeEcommerce() {
 
     // 導航到報表頁面
     await page.click("text=訂單查詢");
-    await page.waitForSelector("table.order-header");
+
+    // 選擇 iPhone 15
+    await page.selectOption("select", "iPhone 15");
+
+    await page.waitForSelector("table");
 
     // 擷取數據
     const data = await page.evaluate(() => {
-      const table = document.querySelector("table.order-header");
+      const table = document.querySelector("table");
       const rows = table.querySelectorAll("tbody tr");
       const results = [];
 
