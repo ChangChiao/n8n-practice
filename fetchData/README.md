@@ -1,111 +1,66 @@
-# Docker 使用指南
+# n8n Web Scraper
 
-這份文件說明如何使用 Docker 來執行 n8n web scraper，讓你不需要在本機安裝任何相依套件。
+這個專案提供 n8n 的外部 Playwright 腳本，用於自動化網頁操作和資料擷取。
 
-## 前置準備
+## 功能
 
-1. 安裝 Docker 和 Docker Compose
-2. 複製 `.env.example` 為 `.env` 並設定環境變數：
-   ```bash
-   cp .env.example .env
-   ```
+- 電商平台資料擷取 (`fetch-web-function.js`)
+- 批次新增料號功能 (`add-materials.js`)
 
-## 環境變數設定
-
-編輯 `.env` 檔案，設定以下變數：
-
-- `ECOMMERCE_TEST_LOGIN_URL`: 電商平台登入網址
-- `ECOMMERCE_USERNAME`: 登入帳號
-- `ECOMMERCE_PASSWORD`: 登入密碼
-- `WEBHOOK_URL`: n8n webhook URL（在 Docker 中請使用 `http://host.docker.internal:5678/...`）
-
-## 使用方式
-
-### 1. 建置 Docker 映像檔
+## 安裝
 
 ```bash
-make build
-# 或
-docker-compose build
+npm install
 ```
 
-### 2. 執行 web scraper
+## 環境設定
 
-```bash
-make run
-# 或
-docker-compose run --rm web-scraper
+複製 `.env.example` 到 `.env` 並設定以下變數：
+
+```
+ECOMMERCE_TEST_LOGIN_URL=https://e-commerce-test-site-iota.vercel.app
+ECOMMERCE_USERNAME=admin
+ECOMMERCE_PASSWORD=1234
+WEBHOOK_URL=http://localhost:5678/webhook-test/xxxxx
 ```
 
-### 3. 執行測試腳本
+## 使用方法
+
+### 1. 電商資料擷取
+
+擷取電商平台訂單資料並發送到 n8n webhook：
 
 ```bash
-make test
-# 或
-docker-compose run --rm test-script
+node fetch-web-function.js
 ```
 
-### 4. 在背景執行
+### 2. 批次新增料號
+
+從 CSV 檔案讀取資料並自動新增料號到系統：
 
 ```bash
-make up
-# 或
-docker-compose up -d
+node add-materials.js
 ```
 
-### 5. 查看日誌
+#### CSV 檔案格式
 
-```bash
-make logs
-# 或
-docker-compose logs -f
+預設讀取 `materials.csv`，格式如下：
+
+```csv
+料號,品名,申請人,部門,物料類別,規格,數量
+MAT-20250801,工控電源模組,王小明,研發部,電子零件,DC 24V / 5A,10
+MAT-20250802,工業乙太網路交換器,李美玲,資訊部,網通設備,8 Port / Gigabit,5
 ```
 
-### 6. 進入容器 shell（除錯用）
+#### 使用自訂 CSV 檔案
 
 ```bash
-make shell
-# 或
-docker-compose run --rm web-scraper /bin/bash
-```
-
-### 7. 停止所有服務
-
-```bash
-make down
-# 或
-docker-compose down
-```
-
-### 8. 清理資源
-
-```bash
-make clean
+CSV_PATH=/path/to/your/file.csv node add-materials.js
 ```
 
 ## 注意事項
 
-1. **Webhook URL**: 如果 n8n 運行在本機，在 Docker 容器中需要使用 `host.docker.internal` 而不是 `localhost`。
-
-2. **Playwright**: 使用官方的 Playwright Docker 映像檔，已包含所有必要的瀏覽器相依套件。
-
-3. **資料儲存**: 如果需要儲存擷取的資料或截圖，會儲存在 `./data` 目錄中。
-
-4. **網路**: 所有服務都在 `n8n-network` 網路中運行，方便服務間通訊。
-
-## 疑難排解
-
-### 無法連接到 webhook
-
-確認 `.env` 中的 `WEBHOOK_URL` 設定正確：
-
-- 本機 n8n: `http://host.docker.internal:5678/webhook-test/...`
-- 遠端 n8n: 使用實際的網址
-
-### 瀏覽器無法啟動
-
-確認 Docker 有足夠的記憶體（建議至少 2GB）。
-
-### 權限問題
-
-容器內使用非 root 使用者執行，如果遇到權限問題，請確認 `./data` 目錄有正確的權限。
+- 執行腳本時會以非 headless 模式執行，可以看到瀏覽器操作過程
+- 驗證碼預設填入 "0000"
+- 批次新增料號時，每筆資料處理間隔 1 秒，避免操作過快
+- 如果新增失敗，程式會繼續處理下一筆資料並記錄錯誤訊息
