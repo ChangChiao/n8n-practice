@@ -1,7 +1,9 @@
 const { chromium } = require("playwright");
 const { parse } = require("csv-parse/sync");
+const { stringify } = require("csv-stringify/sync");
 const fs = require("fs");
 const path = require("path");
+const prompts = require("prompts");
 require("dotenv").config();
 
 async function addMaterialsFromCSV() {
@@ -64,10 +66,20 @@ async function addMaterialsFromCSV() {
 
     console.log(`找到 ${records.length} 筆資料需要新增`);
 
+    // 初始化處理狀態陣列
+    const processResults = [];
+
     // 處理每一筆資料
     for (let i = 0; i < records.length; i++) {
       const record = records[i];
       console.log(`\n處理第 ${i + 1}/${records.length} 筆資料...`);
+      
+      // 如果記錄已有狀態且為已完成，則跳過
+      if (record.狀態 === "已完成") {
+        console.log(`✓ 料號 ${record.料號} 已經完成，跳過處理`);
+        processResults.push(record);
+        continue;
+      }
 
       try {
         // 導航到料號管理頁面
@@ -131,8 +143,21 @@ async function addMaterialsFromCSV() {
 
         // 稍微等待避免操作太快
         await page.waitForTimeout(1000);
+        
+        // 記錄成功狀態
+        processResults.push({
+          ...record,
+          狀態: "已完成"
+        });
       } catch (error) {
         console.error(`✗ 料號 ${record.料號} 新增失敗:`, error.message);
+        
+        // 記錄失敗狀態
+        processResults.push({
+          ...record,
+          狀態: "未完成"
+        });
+        
         // 如果出錯，嘗試關閉彈窗或返回列表頁
         try {
           await page.click('button:has-text("取消")', { timeout: 2000 });
@@ -144,9 +169,29 @@ async function addMaterialsFromCSV() {
 
     console.log("\n所有資料處理完成！");
 
+    // 詢問是否更新 CSV
+    const response = await prompts({
+      type: "confirm",
+      name: "updateCSV",
+      message: "是否將表單進度回填到讀取的 CSV？",
+      initial: true
+    });
+
+    if (response.updateCSV) {
+      // 生成更新後的 CSV 內容
+      const updatedCSV = stringify(processResults, {
+        header: true,
+        columns: Object.keys(processResults[0])
+      });
+
+      // 寫回檔案
+      fs.writeFileSync(csvPath, updatedCSV, "utf-8");
+      console.log("✓ CSV 檔案已更新！");
+    }
+
     // 等待使用者查看結果
-    // console.log("瀏覽器將在 10 秒後關閉...");
-    // await page.waitForTimeout(10000);
+    console.log("瀏覽器將在 5 秒後關閉...");
+    await page.waitForTimeout(5000);
   } catch (error) {
     console.error("執行失敗:", error);
     throw error;
